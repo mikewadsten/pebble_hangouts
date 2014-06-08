@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.text.SpannableString;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -53,8 +54,27 @@ public class PebbleHangoutsService extends NotificationListenerService {
             Notification n = sbn.getNotification();
             Bundle nExtras = n.extras;
 
-            String sender = nExtras.getString(Notification.EXTRA_TITLE);
-            String text = nExtras.getString(Notification.EXTRA_TEXT);
+            String sender, text;
+            Object senderObj, textObj;
+
+            senderObj = nExtras.get(Notification.EXTRA_TITLE);
+            if (senderObj instanceof String) {
+                sender = (String) senderObj;
+            } else {
+                Log.e(TAG, "Notification title not String, it's " + senderObj.getClass().getCanonicalName());
+                sender = senderObj.toString();
+            }
+
+            textObj = nExtras.get(Notification.EXTRA_TEXT);
+            if (textObj instanceof String) {
+                text = (String) textObj;
+            } else if (textObj instanceof SpannableString) {
+                Log.d(TAG, "Converting notification text to String");
+                text = ((SpannableString)textObj).toString();
+            } else {
+                Log.e(TAG, "Notification text not String, it's " + textObj.getClass().getCanonicalName());
+                text = textObj.toString();
+            }
 
             final Map data = new HashMap();
             data.put("title", sender);
