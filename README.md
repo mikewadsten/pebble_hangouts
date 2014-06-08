@@ -12,7 +12,7 @@ Using the [Android NotificationListenerService API][nlsapi], and a little help f
 
 Then I had a bit more work to do, because of some typecasting issues.
 
-Should-be-signed APK available [here][apk].
+Should-be-signed APK available [here][apk]. (Note: This may be out of date.)
 
 [pebble_issue]:  http://forums.getpebble.com/discussion/9916/colon-in-hangouts-notifications-cutting-off-message
 [nlsapi]: https://developer.android.com/reference/android/service/notification/NotificationListenerService.html
