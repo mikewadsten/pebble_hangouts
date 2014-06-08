@@ -26,9 +26,9 @@ public class MainActivity extends Activity {
         TextView enabledOrNot = (TextView) findViewById(R.id.enabledOrNot);
 
         if (PebbleHangoutsService.isEnabled()) {
-            enabledOrNot.setText("Service is enabled");
+            enabledOrNot.setText("App has notification access.");
         } else {
-            enabledOrNot.setText("Service is not enabled.");
+            enabledOrNot.setText("Please grant 'PHF Service' notification access.");
         }
     }
 }

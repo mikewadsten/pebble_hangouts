@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import android.text.SpannableString;
+import android.text.TextUtils;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -15,9 +15,6 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Mike on 6/8/2014.
- */
 public class PebbleHangoutsService extends NotificationListenerService {
     private static final String HANGOUTS_PKG_NAME = "com.google.android.talk";
     private static final String SEND_TO_PEBBLE = "com.getpebble.action.SEND_NOTIFICATION";
@@ -55,28 +52,54 @@ public class PebbleHangoutsService extends NotificationListenerService {
             Bundle nExtras = n.extras;
 
             String sender, text;
-            Object senderObj, textObj;
+            Object textObj;
 
-            senderObj = nExtras.get(Notification.EXTRA_TITLE);
-            if (senderObj instanceof String) {
-                sender = (String) senderObj;
-            } else {
-                Log.e(TAG, "Notification title not String, it's " + senderObj.getClass().getCanonicalName());
-                sender = senderObj.toString();
+            sender = nExtras.getString(Notification.EXTRA_TITLE);
+            if (TextUtils.isEmpty(sender)) {
+                sender = "(No title)";
             }
 
-            textObj = nExtras.get(Notification.EXTRA_TEXT);
-            if (textObj instanceof String) {
-                text = (String) textObj;
-            } else if (textObj instanceof SpannableString) {
-                Log.d(TAG, "Converting notification text to String");
-                text = ((SpannableString)textObj).toString();
+            boolean isPicture, isInbox;
+
+            // Let's figure out what kind of notification this is.
+            if (nExtras.containsKey(Notification.EXTRA_TEXT_LINES)) {
+                // Since it explicitly has multiple lines, it's InboxStyle.
+                isInbox = true;
+                isPicture = false;
+            } else if (nExtras.containsKey(Notification.EXTRA_PICTURE)) {
+                // Since it has a picture, it's BigPictureStyle.
+                isPicture = true;
+                isInbox = false;
             } else {
-                Log.e(TAG, "Notification text not String, it's " + textObj.getClass().getCanonicalName());
-                text = textObj.toString();
+                // It's a normal notification, or BigTextStyle.
+                isInbox = isPicture = false;
             }
 
-            final Map data = new HashMap();
+            if (isInbox) {
+                // Join the lines.
+                text = TextUtils.join("\n", nExtras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES));
+            } else if (isPicture) {
+                // Say this is a picture, and add on the summary text (if any).
+                String summary = nExtras.getString(Notification.EXTRA_SUMMARY_TEXT);
+                if (TextUtils.isEmpty(summary)) {
+                    text = "[Picture]";
+                } else {
+                    text = String.format("[Picture]\n%s", summary);
+                }
+            } else {
+                // Treat it as a normal (or BigTextStyle) notification.
+                textObj = nExtras.get(Notification.EXTRA_TEXT);
+                if (textObj instanceof String || textObj == null) {
+                    text = (String) textObj;
+                    text = TextUtils.isEmpty(text) ? "[empty]" : text;
+                } else {
+                    // If textObj is a SpannableString, toString does what we want.
+                    // If it's anything else, let's just toString it and see what we get.
+                    text = textObj.toString();
+                }
+            }
+
+            final Map<String, String> data = new HashMap<String, String>();
             data.put("title", sender);
             data.put("body", text);
 
